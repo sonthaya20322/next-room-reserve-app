@@ -1,0 +1,63 @@
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db/prisma";
+import { conflict } from "@/lib/http/errors";
+import { jsonCreated, jsonError, jsonOk } from "@/lib/http/response";
+import {
+  asRecord,
+  optionalPositiveInt,
+  readJsonBody,
+  requireNonEmptyString,
+  requirePositiveInt,
+} from "@/lib/validation/parse";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search")?.trim() || undefined;
+    const minCapacity = optionalPositiveInt(
+      searchParams.get("minCapacity"),
+      "minCapacity",
+    );
+
+    const where: Prisma.RoomWhereInput = {};
+    if (search) {
+      where.OR = [
+        { roomName: { contains: search } },
+        { location: { contains: search } },
+      ];
+    }
+    if (minCapacity !== undefined) {
+      where.capacity = { gte: minCapacity };
+    }
+
+    const rooms = await prisma.room.findMany({
+      where,
+      orderBy: { id: "asc" },
+    });
+    return jsonOk({ data: rooms });
+  } catch (error) {
+    return jsonError(error);
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = asRecord(await readJsonBody(request));
+    const roomCode = requireNonEmptyString(body.roomCode, "roomCode");
+    const roomName = requireNonEmptyString(body.roomName, "roomName");
+    const location = requireNonEmptyString(body.location, "location");
+    const capacity = requirePositiveInt(body.capacity, "capacity");
+
+    const existing = await prisma.room.findUnique({ where: { roomCode } });
+    if (existing) {
+      throw conflict("รหัสห้องซ้ำ", { roomCode });
+    }
+
+    const room = await prisma.room.create({
+      data: { roomCode, roomName, location, capacity },
+    });
+    return jsonCreated(room);
+  } catch (error) {
+    return jsonError(error);
+  }
+}
