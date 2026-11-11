@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { conflict } from "@/lib/http/errors";
+import { getSearchParams } from "@/lib/http/request";
 import { jsonCreated, jsonError, jsonOk } from "@/lib/http/response";
 import {
   asRecord,
@@ -11,8 +12,8 @@ import {
 } from "@/lib/validation/parse";
 
 export async function GET(request: Request) {
+  const searchParams = getSearchParams(request);
   try {
-    const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.trim() || undefined;
     const minCapacity = optionalPositiveInt(
       searchParams.get("minCapacity"),

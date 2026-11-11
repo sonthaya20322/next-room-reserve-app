@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { overlapWhere } from "@/lib/domain/overlap-query";
 import { assertValidBookingWindow } from "@/lib/domain/booking-rules";
+import { getSearchParams } from "@/lib/http/request";
 import { jsonError, jsonOk } from "@/lib/http/response";
 import {
   optionalPositiveInt,
@@ -8,8 +9,8 @@ import {
 } from "@/lib/validation/parse";
 
 export async function GET(request: Request) {
+  const searchParams = getSearchParams(request);
   try {
-    const { searchParams } = new URL(request.url);
     const range = parsePairDateRange(
       searchParams.get("startTime"),
       searchParams.get("endTime"),

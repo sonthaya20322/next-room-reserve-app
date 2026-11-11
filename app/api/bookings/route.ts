@@ -7,6 +7,7 @@ import {
 import { overlapWhere } from "@/lib/domain/overlap-query";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "@/lib/http/errors";
+import { getSearchParams } from "@/lib/http/request";
 import { jsonCreated, jsonError, jsonOk } from "@/lib/http/response";
 import {
   asRecord,
@@ -20,8 +21,8 @@ import {
 } from "@/lib/validation/parse";
 
 export async function GET(request: Request) {
+  const searchParams = getSearchParams(request);
   try {
-    const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.trim() || undefined;
     const roomId = optionalPositiveInt(searchParams.get("roomId"), "roomId");
     const range = parsePairDateRange(

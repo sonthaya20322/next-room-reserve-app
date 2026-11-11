@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { badRequest, notFound } from "@/lib/http/errors";
+import { getSearchParams } from "@/lib/http/request";
 import { jsonError, jsonOk } from "@/lib/http/response";
 import {
   requireDateTime,
@@ -7,8 +8,8 @@ import {
 } from "@/lib/validation/parse";
 
 export async function DELETE(request: Request) {
+  const searchParams = getSearchParams(request);
   try {
-    const { searchParams } = new URL(request.url);
     const roomIdRaw = searchParams.get("roomId");
     const beforeRaw = searchParams.get("before");
 

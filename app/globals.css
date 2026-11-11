@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f7fa;
+  --surface: #ffffff;
+  --foreground: #1f2937;
+  --muted: #4b5563;
+  --border: #d6dee8;
+  --primary: #1b4f72;
+  --primary-hover: #163f5b;
+  --success: #1e7a4c;
+  --warning: #b45309;
+  --danger: #9b1c1c;
+  --accent-slate: #334155;
+  --stripe: #e8eef5;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-accent-slate: var(--accent-slate);
+  --color-stripe: var(--stripe);
+  --font-sans: var(--font-ibm-plex);
+  --font-display: var(--font-source-serif);
 }
 
 body {
-  background: var(--background);
+  background:
+    linear-gradient(180deg, #eef3f8 0%, var(--background) 220px),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ibm-plex), "Segoe UI", sans-serif;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-source-serif), Georgia, serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
 }
