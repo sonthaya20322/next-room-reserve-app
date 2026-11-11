@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     assertValidBookingWindow(range.from, range.to, new Date(), {
-      requireFutureStart: false,
+      requireFutureStart: true,
     });
 
     const attendeeCount = optionalPositiveInt(

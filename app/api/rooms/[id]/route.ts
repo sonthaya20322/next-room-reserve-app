@@ -6,10 +6,11 @@ import {
 import { prisma } from "@/lib/db/prisma";
 import { conflict, notFound } from "@/lib/http/errors";
 import { jsonError, jsonOk } from "@/lib/http/response";
+import { FIELD_LIMITS } from "@/lib/validation/limits";
 import {
   asRecord,
-  optionalNonEmptyString,
-  optionalPositiveInt,
+  optionalBodyPositiveInt,
+  optionalBodyString,
   readJsonBody,
   requireIdParam,
 } from "@/lib/validation/parse";
@@ -34,10 +35,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!room) throw notFound("ไม่พบห้องประชุม", { id });
 
     const body = asRecord(await readJsonBody(request));
-    const roomCode = optionalNonEmptyString(body.roomCode, "roomCode");
-    const roomName = optionalNonEmptyString(body.roomName, "roomName");
-    const location = optionalNonEmptyString(body.location, "location");
-    const capacity = optionalPositiveInt(body.capacity, "capacity");
+    const roomCode = optionalBodyString(body, "roomCode", FIELD_LIMITS.roomCode);
+    const roomName = optionalBodyString(body, "roomName", FIELD_LIMITS.roomName);
+    const location = optionalBodyString(body, "location", FIELD_LIMITS.location);
+    const capacity = optionalBodyPositiveInt(body, "capacity");
 
     if (
       roomCode === undefined &&

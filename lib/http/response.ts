@@ -1,5 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { AppError } from "./errors";
+import { AppError, badRequest } from "./errors";
 
 export function jsonOk<T>(data: T, status = 200) {
   return NextResponse.json(data, { status });
@@ -21,6 +22,14 @@ export function jsonError(error: unknown) {
       },
       { status: error.status },
     );
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2000"
+  ) {
+    const mapped = badRequest("ข้อมูลยาวเกินที่ระบบรองรับ");
+    return jsonError(mapped);
   }
 
   console.error(error);

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "@/lib/http/errors";
 import {
+  optionalBodyPositiveInt,
+  optionalBodyString,
   parseDaysParam,
   parsePairDateRange,
   parsePagination,
@@ -14,10 +16,27 @@ describe("validation parse", () => {
     expect(() => requireNonEmptyString("   ", "roomCode")).toThrow(AppError);
   });
 
+  it("rejects overlong strings", () => {
+    expect(() =>
+      requireNonEmptyString("x".repeat(65), "roomCode", 64),
+    ).toThrow(AppError);
+  });
+
   it("requires positive integers", () => {
     expect(requirePositiveInt("3", "capacity")).toBe(3);
     expect(() => requirePositiveInt(0, "capacity")).toThrow(AppError);
     expect(() => requirePositiveInt(1.5, "capacity")).toThrow(AppError);
+  });
+
+  it("treats missing body keys as omit but rejects null", () => {
+    expect(optionalBodyString({}, "roomName")).toBeUndefined();
+    expect(() => optionalBodyString({ roomName: null }, "roomName")).toThrow(
+      AppError,
+    );
+    expect(optionalBodyPositiveInt({}, "capacity")).toBeUndefined();
+    expect(() =>
+      optionalBodyPositiveInt({ capacity: null }, "capacity"),
+    ).toThrow(AppError);
   });
 
   it("requires pair date ranges together", () => {
@@ -39,3 +58,4 @@ describe("validation parse", () => {
     expect(() => parseDaysParam("31")).toThrow(AppError);
   });
 });
+

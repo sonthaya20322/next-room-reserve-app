@@ -5,14 +5,16 @@ import {
   assertValidBookingWindow,
 } from "@/lib/domain/booking-rules";
 import { overlapWhere } from "@/lib/domain/overlap-query";
+import { lockRoomForUpdate } from "@/lib/db/lock-room";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "@/lib/http/errors";
 import { jsonError, jsonOk } from "@/lib/http/response";
+import { FIELD_LIMITS } from "@/lib/validation/limits";
 import {
   asRecord,
-  optionalDateTime,
-  optionalNonEmptyString,
-  optionalPositiveInt,
+  optionalBodyDateTime,
+  optionalBodyPositiveInt,
+  optionalBodyString,
   readJsonBody,
   requireIdParam,
 } from "@/lib/validation/parse";
@@ -48,15 +50,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       const now = new Date();
       assertBookingEditable(existing.startTime, now);
 
-      const bookerName = optionalNonEmptyString(body.bookerName, "bookerName");
-      const purpose = optionalNonEmptyString(body.purpose, "purpose");
-      const startTime = optionalDateTime(body.startTime, "startTime");
-      const endTime = optionalDateTime(body.endTime, "endTime");
-      const attendeeCount = optionalPositiveInt(
-        body.attendeeCount,
-        "attendeeCount",
+      const bookerName = optionalBodyString(
+        body,
+        "bookerName",
+        FIELD_LIMITS.bookerName,
       );
-      const roomId = optionalPositiveInt(body.roomId, "roomId");
+      const purpose = optionalBodyString(body, "purpose", FIELD_LIMITS.purpose);
+      const startTime = optionalBodyDateTime(body, "startTime");
+      const endTime = optionalBodyDateTime(body, "endTime");
+      const attendeeCount = optionalBodyPositiveInt(body, "attendeeCount");
+      const roomId = optionalBodyPositiveInt(body, "roomId");
 
       const next = {
         bookerName: bookerName ?? existing.bookerName,
@@ -69,10 +72,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       assertValidBookingWindow(next.startTime, next.endTime, now);
 
-      const room =
-        next.roomId === existing.roomId
-          ? existing.room
-          : await tx.room.findUnique({ where: { id: next.roomId } });
+      await lockRoomForUpdate(tx, next.roomId);
+      if (next.roomId !== existing.roomId) {
+        await lockRoomForUpdate(tx, existing.roomId);
+      }
+
+      const room = await tx.room.findUnique({ where: { id: next.roomId } });
       if (!room) throw notFound("ไม่พบห้องประชุม", { roomId: next.roomId });
 
       assertFitsRoomCapacity(next.attendeeCount, room.capacity);

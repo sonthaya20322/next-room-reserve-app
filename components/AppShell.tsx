@@ -1,10 +1,10 @@
 import Link from "next/link";
 
 const links = [
-  { href: "/", label: "ภาพรวม" },
+  { href: "/", label: "หน้าแรก" },
   { href: "/rooms", label: "ห้องประชุม" },
-  { href: "/available", label: "ค้นหาห้องว่าง" },
-  { href: "/bookings", label: "รายการจอง" },
+  { href: "/available", label: "จองห้อง" },
+  { href: "/bookings", label: "ตารางจอง" },
 ];
 
 export function AppShell({

@@ -1,4 +1,5 @@
 import { badRequest } from "@/lib/http/errors";
+import { FIELD_LIMITS, type LimitedField } from "./limits";
 
 export function asRecord(value: unknown): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
@@ -10,6 +11,7 @@ export function asRecord(value: unknown): Record<string, unknown> {
 export function requireNonEmptyString(
   value: unknown,
   field: string,
+  maxLength?: number,
 ): string {
   if (typeof value !== "string") {
     throw badRequest(`${field} ต้องเป็นข้อความ`, { field });
@@ -18,15 +20,33 @@ export function requireNonEmptyString(
   if (!trimmed) {
     throw badRequest(`${field} ห้ามว่าง`, { field });
   }
+  const limit = maxLength ?? FIELD_LIMITS[field as LimitedField];
+  if (typeof limit === "number" && trimmed.length > limit) {
+    throw badRequest(`${field} ยาวเกิน ${limit} ตัวอักษร`, {
+      field,
+      maxLength: limit,
+    });
+  }
   return trimmed;
+}
+
+/** Body PATCH: missing key = omit; null/invalid = 400 */
+export function optionalBodyString(
+  body: Record<string, unknown>,
+  field: string,
+  maxLength?: number,
+): string | undefined {
+  if (!(field in body)) return undefined;
+  return requireNonEmptyString(body[field], field, maxLength);
 }
 
 export function optionalNonEmptyString(
   value: unknown,
   field: string,
+  maxLength?: number,
 ): string | undefined {
   if (value === undefined) return undefined;
-  return requireNonEmptyString(value, field);
+  return requireNonEmptyString(value, field, maxLength);
 }
 
 export function requirePositiveInt(value: unknown, field: string): number {
@@ -43,12 +63,22 @@ export function requirePositiveInt(value: unknown, field: string): number {
   return num;
 }
 
+/** Query string helper: null/"" = omit */
 export function optionalPositiveInt(
   value: unknown,
   field: string,
 ): number | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   return requirePositiveInt(value, field);
+}
+
+/** Body PATCH: missing key = omit; null/""/invalid = 400 */
+export function optionalBodyPositiveInt(
+  body: Record<string, unknown>,
+  field: string,
+): number | undefined {
+  if (!(field in body)) return undefined;
+  return requirePositiveInt(body[field], field);
 }
 
 export function requireDateTime(value: unknown, field: string): Date {
@@ -66,8 +96,19 @@ export function optionalDateTime(
   value: unknown,
   field: string,
 ): Date | undefined {
-  if (value === undefined || value === null || value === "") return undefined;
+  if (value === undefined) return undefined;
+  if (value === null || value === "") {
+    throw badRequest(`${field} ต้องเป็นวันเวลา ISO-8601`, { field });
+  }
   return requireDateTime(value, field);
+}
+
+export function optionalBodyDateTime(
+  body: Record<string, unknown>,
+  field: string,
+): Date | undefined {
+  if (!(field in body)) return undefined;
+  return optionalDateTime(body[field], field);
 }
 
 export function requireIdParam(value: string): number {

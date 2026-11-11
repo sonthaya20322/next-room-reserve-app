@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { conflict } from "@/lib/http/errors";
 import { getSearchParams } from "@/lib/http/request";
 import { jsonCreated, jsonError, jsonOk } from "@/lib/http/response";
+import { FIELD_LIMITS } from "@/lib/validation/limits";
 import {
   asRecord,
   optionalPositiveInt,
@@ -44,9 +45,21 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = asRecord(await readJsonBody(request));
-    const roomCode = requireNonEmptyString(body.roomCode, "roomCode");
-    const roomName = requireNonEmptyString(body.roomName, "roomName");
-    const location = requireNonEmptyString(body.location, "location");
+    const roomCode = requireNonEmptyString(
+      body.roomCode,
+      "roomCode",
+      FIELD_LIMITS.roomCode,
+    );
+    const roomName = requireNonEmptyString(
+      body.roomName,
+      "roomName",
+      FIELD_LIMITS.roomName,
+    );
+    const location = requireNonEmptyString(
+      body.location,
+      "location",
+      FIELD_LIMITS.location,
+    );
     const capacity = requirePositiveInt(body.capacity, "capacity");
 
     const existing = await prisma.room.findUnique({ where: { roomCode } });

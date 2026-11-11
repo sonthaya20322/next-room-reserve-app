@@ -5,6 +5,7 @@ import {
   assertValidBookingWindow,
 } from "@/lib/domain/booking-rules";
 import { overlapWhere } from "@/lib/domain/overlap-query";
+import { lockRoomForUpdate } from "@/lib/db/lock-room";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "@/lib/http/errors";
 import { getSearchParams } from "@/lib/http/request";
@@ -19,6 +20,7 @@ import {
   requireNonEmptyString,
   requirePositiveInt,
 } from "@/lib/validation/parse";
+import { FIELD_LIMITS } from "@/lib/validation/limits";
 
 export async function GET(request: Request) {
   const searchParams = getSearchParams(request);
@@ -73,8 +75,16 @@ export async function POST(request: Request) {
   try {
     const body = asRecord(await readJsonBody(request));
     const roomId = requirePositiveInt(body.roomId, "roomId");
-    const bookerName = requireNonEmptyString(body.bookerName, "bookerName");
-    const purpose = requireNonEmptyString(body.purpose, "purpose");
+    const bookerName = requireNonEmptyString(
+      body.bookerName,
+      "bookerName",
+      FIELD_LIMITS.bookerName,
+    );
+    const purpose = requireNonEmptyString(
+      body.purpose,
+      "purpose",
+      FIELD_LIMITS.purpose,
+    );
     const startTime = requireDateTime(body.startTime, "startTime");
     const endTime = requireDateTime(body.endTime, "endTime");
     const attendeeCount = requirePositiveInt(
@@ -85,6 +95,7 @@ export async function POST(request: Request) {
     assertValidBookingWindow(startTime, endTime);
 
     const booking = await prisma.$transaction(async (tx) => {
+      await lockRoomForUpdate(tx, roomId);
       const room = await tx.room.findUnique({ where: { id: roomId } });
       if (!room) throw notFound("ไม่พบห้องประชุม", { roomId });
 
